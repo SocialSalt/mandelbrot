@@ -1,3 +1,4 @@
+#include "include/mandelbrot.h"
 #include <math.h>
 #include <stdlib.h>
 
@@ -6,11 +7,11 @@
 #define NUM_BLOCKS (int)ceil(((long double)IMG_W * IMG_H) / NUM_THREADS)
 
 typedef struct complexNumber {
-  long double real;
-  long double imag;
+  double real;
+  double imag;
 } C;
 
-__device__ long double complexAbs(C *c) {
+__device__ double complexAbs(C *c) {
   return sqrtf((c->real * c->real) + (c->imag * c->imag));
 }
 
@@ -44,31 +45,32 @@ __device__ void getColor(int itrs, unsigned char *r, unsigned char *g,
   *b = (unsigned char)(itrs * 2.35f);
 }
 
-__global__ void parallelMandelbrot(unsigned char *dev_image,
-                                   long double real_min, long double inc_real,
-                                   long double imag_min, long double inc_imag,
-                                   int img_w, int img_h, int channels) {
+__global__ void parallelMandelbrot(unsigned char *image, double real_min,
+                                   double inc_real, double imag_min,
+                                   double inc_imag, int img_w, int img_h,
+                                   int channels) {
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
   int y = (blockIdx.y * blockDim.y) + threadIdx.y;
   if (x < img_w && y < img_h) {
-    long double real = real_min + ((long double)x * inc_real);
-    long double imag = imag_min + ((long double)y * inc_imag);
+    double real = real_min + ((double)x * inc_real);
+    double imag = imag_min + ((double)y * inc_imag);
     C c = {real, imag};
-    int iters = mandelbrot(&c);
-    unsigned char r, g, b;
 
+    int iters = mandelbrot(&c);
+
+    unsigned char r, g, b;
     getColor(iters, &r, &g, &b);
 
     int pixel_index = (x + (y * img_w)) * channels;
-    dev_image[pixel_index + 0] = r;
-    dev_image[pixel_index + 1] = g;
-    dev_image[pixel_index + 2] = b;
+    image[pixel_index + 0] = r;
+    image[pixel_index + 1] = g;
+    image[pixel_index + 2] = b;
   }
 }
 
-extern "C" void LaunchMandelbrot(unsigned char *res, long double real_min,
-                                 long double real_max, long double imag_min,
-                                 long double imag_max, int img_w, int img_h,
+extern "C" void LaunchMandelbrot(unsigned char *res, double real_min,
+                                 double real_max, double imag_min,
+                                 double imag_max, int img_w, int img_h,
                                  int channels) {
 
   long double inc_real = (real_max - real_min) / img_w;

@@ -1,15 +1,15 @@
-#include "include/mandelbrot.h"
+#include "include/cpumandelbrot.h"
 #include <math.h>
 
 #define MAX_ITER 100
 
 typedef struct complexNumber {
-  long double real;
-  long double imag;
+  double real;
+  double imag;
 } C;
 
-long double complexAbs(C *c) {
-  return sqrtl((c->real * c->real) + (c->imag * c->imag));
+double complexAbs(C *c) {
+  return sqrt((c->real * c->real) + (c->imag * c->imag));
 }
 
 void complexAdd(C *z, C *cnst, C *res) {
@@ -68,8 +68,8 @@ void CpuMandelbrot(unsigned char *res, double real_min, double real_max,
                    double imag_min, double imag_max, int img_w, int img_h,
                    int channels) {
 
-  long double inc_real = (real_max - real_min) / img_w;
-  long double inc_imag = (imag_max - imag_min) / img_h;
+  double inc_real = (real_max - real_min) / img_w;
+  double inc_imag = (imag_max - imag_min) / img_h;
   int bytes = img_w * img_h * channels * sizeof(unsigned char);
 
   computeMandelbrot(res, real_min, imag_min, inc_real, inc_imag, img_w, img_h,
