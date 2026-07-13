@@ -6,7 +6,6 @@ import (
 	"time"
 
 	userinterface "github.com/socialsalt/mandelbrot/internal"
-	_ "github.com/socialsalt/mandelbrot/lib"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -37,33 +36,48 @@ func main() {
 
 	channels := 3
 	buffer := make([]byte, width*height*channels)
-	real_min := -2.0
-	real_max := 1.0
-	imag_min := -0.85
-	imag_max := 0.8375
+
+	w, h := window.GetSize()
+	state := userinterface.State{
+		MouseState: userinterface.MouseState{},
+		Bounds: userinterface.ViewBoundaries{
+			MinReal: -2.0,
+			MaxReal: 1.0,
+			MinImag: -0.85,
+			MaxImag: 0.8375,
+		},
+		Window: userinterface.WindowShape{W: w, H: h},
+	}
+	state.NextBounds = state.Bounds
 
 	lastDraw := time.Now()
 
 Outer:
 	for {
-		switch userinterface.PollInput() {
+		switch userinterface.PollInput(&state) {
 		case false:
 			break Outer
 		default:
 			if time.Since(lastDraw).Milliseconds() > 50 {
-				s := time.Now()
-				// C.CpuMandelbrot(
+				w, h := window.GetSize()
+				state.Window.W = w
+				state.Window.H = h
+				if state.MouseState.IsDragging {
+					fmt.Printf("width: %#v\n", state.NextBounds.MaxReal-state.NextBounds.MinReal)
+					fmt.Printf("height: %#v\n", state.NextBounds.MaxImag-state.NextBounds.MinImag)
+				}
+				// s := time.Now()
 				C.LaunchMandelbrot(
 					(*C.uchar)(&buffer[0]),
-					C.double(real_min),
-					C.double(real_max),
-					C.double(imag_min),
-					C.double(imag_max),
+					C.double(state.NextBounds.MinReal),
+					C.double(state.NextBounds.MaxReal),
+					C.double(state.NextBounds.MinImag),
+					C.double(state.NextBounds.MaxImag),
 					C.int(width),
 					C.int(height),
 					C.int(channels),
 				)
-				fmt.Printf("frame time was %v\n", time.Now().Sub(s).Microseconds())
+				// fmt.Printf("frame time was %v\n", time.Now().Sub(s).Milliseconds())
 				userinterface.UpdateDisplay(buffer, renderer, texture, width, height, 3*width)
 				lastDraw = time.Now()
 			}
