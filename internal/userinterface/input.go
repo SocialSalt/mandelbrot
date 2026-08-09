@@ -54,20 +54,6 @@ func ComputeDrag(start Location, end Location, width int32, height int32, bounds
 
 }
 
-// func ComputeDragBigFloat(start Location, end Location, width int32, height int32, bounds ViewBoundaries, center ImageCenter) ImageCenter {
-// 	xPx := start.X - end.X
-// 	yPx := start.Y - end.Y
-//
-// 	xMovement := utils.FP128Product(utils.FP128Quotient(big.NewFloat(float64(xPx)), big.NewFloat(float64(width))), bounds.RealWidth)
-// 	yMovement := utils.FP128Product(utils.FP128Quotient(big.NewFloat(float64(yPx)), big.NewFloat(float64(height))), bounds.ImagHeight)
-//
-// 	return ImageCenter{
-// 		Real: new(big.Float).SetPrec(utils.FP128_PRECISION).Add(center.Real, xMovement),
-// 		Imag: new(big.Float).SetPrec(utils.FP128_PRECISION).Add(center.Imag, yMovement),
-// 	}
-//
-// }
-
 func PollInput(state *State) bool {
 	event := sdl.PollEvent()
 	switch t := event.(type) {
@@ -102,15 +88,11 @@ func PollInput(state *State) bool {
 	case *sdl.MouseWheelEvent:
 		switch t.PreciseY {
 		case 1:
-			// state.Bounds.RealWidth = utils.FP128Product(state.Bounds.RealWidth, big.NewFloat(0.9))
-			// state.Bounds.ImagHeight = utils.FP128Product(state.Bounds.ImagHeight, big.NewFloat(0.9))
 			state.Bounds.RealWidth *= 0.9
 			state.Bounds.ImagHeight *= 0.9
 		case -1:
 			state.Bounds.RealWidth *= 1.1
 			state.Bounds.ImagHeight *= 1.1
-			// state.Bounds.RealWidth = utils.FP128Product(state.Bounds.RealWidth, big.NewFloat(1.1))
-			// state.Bounds.ImagHeight = utils.FP128Product(state.Bounds.ImagHeight, big.NewFloat(1.1))
 		}
 		// state.MouseState.Scroll += t.PreciseY
 		// fmt.Printf("PreciseY: %v\n", t.PreciseY)

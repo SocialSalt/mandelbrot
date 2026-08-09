@@ -61,22 +61,18 @@ Outer:
 				state.Window.H = h
 				// s := time.Now()
 
-				r := state.NextCenter.Real
-				i := state.NextCenter.Imag
-				rw := state.Bounds.RealWidth
-				ih := state.Bounds.ImagHeight
 				C.ComputeMandelbrot(
 					(*C.uchar)(&buffer[0]),
 					C.int(width),
 					C.int(height),
-					C.double(r),
-					C.double(i),
-					C.double(rw),
-					C.double(ih),
+					C.double(state.NextCenter.Real),
+					C.double(state.NextCenter.Imag),
+					C.double(state.Bounds.RealWidth),
+					C.double(state.Bounds.ImagHeight),
 					C.int(channels),
 				)
 
-				// fmt.Printf("frame time was %v\n", time.Since(s).Milliseconds())
+				// fmt.Printf("time to compute data was %v\n", time.Since(s).Milliseconds())
 				userinterface.UpdateDisplay(buffer, renderer, texture, width, height, 3*width)
 				lastDraw = time.Now()
 			}

@@ -1,4 +1,3 @@
-#include "include/mandelbrot.h"
 #include <crt/device_fp128_functions.h>
 #include <math.h>
 #include <stdio.h>
@@ -112,7 +111,6 @@ void computeMandelbrot128(unsigned char *image, int img_w, int img_h,
   cudaFree(dev_image);
 }
 
-extern "C" {
 void ComputeMandelbrot128Double(unsigned char *image, int img_w, int img_h,
                                 double real_center, double imag_center,
                                 double real_width, double imag_height,
@@ -132,5 +130,4 @@ void ComputeMandelbrot128String(unsigned char *image, int img_w, int img_h,
   computeMandelbrot128(image, img_w, img_h, parseFloat128(real_center),
                        parseFloat128(imag_center), parseFloat128(real_width),
                        parseFloat128(imag_height), channels);
-}
 }

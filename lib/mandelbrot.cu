@@ -1,9 +1,10 @@
 #include "include/mandelbrot.h"
+#include <cmath>
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_ITER 10000
+#define MAX_ITER 500
+#define MAX_ITERF 500.0f
 #define NUM_THREADS 32 * 32
 #define NUM_BLOCKS (int)ceil(((long double)IMG_W * IMG_H) / NUM_THREADS)
 
@@ -34,7 +35,7 @@ __device__ int mandelbrot(C *c) {
   C z = {0.0, 0.0};
   C zsq;
   for (int i = 0; i < MAX_ITER; i++) {
-    if (modsq(&z) > 4) {
+    if (modulus(&z) > 2) {
       return i;
     }
     mult(&z, &z, &zsq);
@@ -51,9 +52,9 @@ __device__ void getColor(int itrs, unsigned char *r, unsigned char *g,
     *g = 0;
     *b = 0;
   } else {
-    *r = (unsigned char)(itrs * 2.0f);
-    *g = (unsigned char)(itrs * 1.9f);
-    *b = (unsigned char)(itrs * 2.35f);
+    *r = (unsigned char)(itrs * (200.0f / MAX_ITERF));
+    *g = (unsigned char)(itrs * (190.0f / MAX_ITERF));
+    *b = (unsigned char)(itrs * (235.0f / MAX_ITERF));
   }
 }
 
