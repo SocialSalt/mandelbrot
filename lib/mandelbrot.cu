@@ -1,5 +1,6 @@
 #include "include/mandelbrot.h"
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #define MAX_ITER 10000
@@ -92,6 +93,9 @@ void ComputeMandelbrot(unsigned char *image, int img_w, int img_h,
   double real_scale = (real_max - real_min) / img_w;
   double imag_scale = (imag_max - imag_min) / img_h;
   int bytes = img_w * img_h * channels * sizeof(unsigned char);
+
+  // printf("%f + %fi, W: %f H: %f\n", (double)real_center, (double)imag_center,
+  //        (double)real_width, (double)imag_height);
 
   unsigned char *dev_image;
   cudaMalloc(&dev_image, img_w * img_h * channels);

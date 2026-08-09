@@ -12,7 +12,6 @@ import (
 #cgo LDFLAGS: -L/usr/local/cuda/lib64 -lcudart
 #cgo LDFLAGS: -L${SRCDIR}/../lib -Wl,-rpath,${SRCDIR}/../lib -lmandelbrot
 #include "../lib/include/mandelbrot.h"
-#include <stdlib.h>
 */
 import "C"
 
@@ -77,7 +76,7 @@ Outer:
 					C.int(channels),
 				)
 
-				// fmt.Printf("frame time was %v\n", time.Now().Sub(s).Milliseconds())
+				// fmt.Printf("frame time was %v\n", time.Since(s).Milliseconds())
 				userinterface.UpdateDisplay(buffer, renderer, texture, width, height, 3*width)
 				lastDraw = time.Now()
 			}
