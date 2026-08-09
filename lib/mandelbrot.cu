@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define MAX_ITER 100
+#define MAX_ITER 10000
 #define NUM_THREADS 32 * 32
 #define NUM_BLOCKS (int)ceil(((long double)IMG_W * IMG_H) / NUM_THREADS)
 
@@ -13,6 +13,10 @@ typedef struct complexNumber {
 
 __device__ double modulus(C *c) {
   return sqrtf((c->real * c->real) + (c->imag * c->imag));
+}
+
+__device__ double modsq(C *c) {
+  return (c->real * c->real) + (c->imag * c->imag);
 }
 
 __device__ void add(C *z, C *cnst, C *res) {
@@ -29,7 +33,7 @@ __device__ int mandelbrot(C *c) {
   C z = {0.0, 0.0};
   C zsq;
   for (int i = 0; i < MAX_ITER; i++) {
-    if (modulus(&z) > 2) {
+    if (modsq(&z) > 4) {
       return i;
     }
     mult(&z, &z, &zsq);
@@ -40,20 +44,27 @@ __device__ int mandelbrot(C *c) {
 
 __device__ void getColor(int itrs, unsigned char *r, unsigned char *g,
                          unsigned char *b) {
-  *r = (unsigned char)(itrs * 2.0f);
-  *g = (unsigned char)(itrs * 1.9f);
-  *b = (unsigned char)(itrs * 2.35f);
+
+  if (itrs == MAX_ITER) {
+    *r = 0;
+    *g = 0;
+    *b = 0;
+  } else {
+    *r = (unsigned char)(itrs * 2.0f);
+    *g = (unsigned char)(itrs * 1.9f);
+    *b = (unsigned char)(itrs * 2.35f);
+  }
 }
 
 __global__ void parallelMandelbrot(unsigned char *image, double real_min,
-                                   double inc_real, double imag_min,
-                                   double inc_imag, int img_w, int img_h,
+                                   double real_scale, double imag_min,
+                                   double imag_scale, int img_w, int img_h,
                                    int channels) {
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
   int y = (blockIdx.y * blockDim.y) + threadIdx.y;
   if (x < img_w && y < img_h) {
-    double real = real_min + ((double)x * inc_real);
-    double imag = imag_min + ((double)y * inc_imag);
+    double real = real_min + ((double)x * real_scale);
+    double imag = imag_min + ((double)y * imag_scale);
     C c = {real, imag};
 
     int iters = mandelbrot(&c);
@@ -69,12 +80,17 @@ __global__ void parallelMandelbrot(unsigned char *image, double real_min,
 }
 
 extern "C" {
-void LaunchMandelbrot(unsigned char *res, double real_min, double real_max,
-                      double imag_min, double imag_max, int img_w, int img_h,
-                      int channels) {
+void ComputeMandelbrot(unsigned char *image, int img_w, int img_h,
+                       double real_center, double imag_center,
+                       double real_width, double imag_height, int channels) {
 
-  long double inc_real = (real_max - real_min) / img_w;
-  long double inc_imag = (imag_max - imag_min) / img_h;
+  double real_max = real_center + real_width / 2.0;
+  double real_min = real_center - real_width / 2.0;
+  double imag_max = imag_center + imag_height / 2.0;
+  double imag_min = imag_center - imag_height / 2.0;
+
+  double real_scale = (real_max - real_min) / img_w;
+  double imag_scale = (imag_max - imag_min) / img_h;
   int bytes = img_w * img_h * channels * sizeof(unsigned char);
 
   unsigned char *dev_image;
@@ -83,11 +99,11 @@ void LaunchMandelbrot(unsigned char *res, double real_min, double real_max,
   dim3 block_dim(32, 32, 1);
   dim3 grid_dim(ceil((float)img_w / 32), ceil((float)img_h / 32), 1);
 
-  parallelMandelbrot<<<grid_dim, block_dim>>>(dev_image, real_min, inc_real,
-                                              imag_min, inc_imag, img_w, img_h,
-                                              channels);
+  parallelMandelbrot<<<grid_dim, block_dim>>>(dev_image, real_min, real_scale,
+                                              imag_min, imag_scale, img_w,
+                                              img_h, channels);
   cudaDeviceSynchronize();
-  cudaMemcpy(res, dev_image, bytes, cudaMemcpyDeviceToHost);
+  cudaMemcpy(image, dev_image, bytes, cudaMemcpyDeviceToHost);
   cudaFree(dev_image);
 }
 }

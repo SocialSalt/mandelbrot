@@ -13,7 +13,7 @@ func CreateSDL(width int, height int) (*sdl.Window, *sdl.Renderer, *sdl.Texture,
 		return nil, nil, nil, errors.Wrap(err, "failed to init sdl")
 	}
 	window, err := sdl.CreateWindow(
-		"CHIP8",
+		"Mandelbrot",
 		sdl.WINDOWPOS_CENTERED,
 		sdl.WINDOWPOS_CENTERED,
 		int32(width),
