@@ -29,10 +29,10 @@ __device__ void mult(C128 *x, C128 *y, C128 *res) {
 }
 
 __device__ int mandelbrot(C128 *c) {
-  C128 z = {0.0q, 0.0q};
+  C128 z = {0.0, 0.0};
   C128 zsq;
   for (int i = 0; i < MAX_ITER; i++) {
-    if (modsq(&z) > 4.0q) {
+    if (modsq(&z) > 4.0) {
       return i;
     }
     mult(&z, &z, &zsq);
@@ -41,8 +41,8 @@ __device__ int mandelbrot(C128 *c) {
   return MAX_ITER;
 }
 
-__device__ void getColor(int itrs, unsigned char *r, unsigned char *g,
-                         unsigned char *b) {
+__device__ void getColor128(int itrs, unsigned char *r, unsigned char *g,
+                            unsigned char *b) {
 
   if (itrs == MAX_ITER) {
     *r = 0;
@@ -63,6 +63,7 @@ __global__ void parallelMandelbrot128(unsigned char *image, __float128 real_min,
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
   int y = (blockIdx.y * blockDim.y) + threadIdx.y;
   if (x < img_w && y < img_h) {
+    printf("%d, %d", x, y);
     __float128 real = real_min + ((__float128)x * real_scale);
     __float128 imag = imag_min + ((__float128)y * imag_scale);
     C128 c = {real, imag};
@@ -70,7 +71,7 @@ __global__ void parallelMandelbrot128(unsigned char *image, __float128 real_min,
     int iters = mandelbrot(&c);
 
     unsigned char r, g, b;
-    getColor(iters, &r, &g, &b);
+    getColor128(iters, &r, &g, &b);
 
     int pixel_index = (x + (y * img_w)) * channels;
     image[pixel_index + 0] = r;
@@ -78,27 +79,20 @@ __global__ void parallelMandelbrot128(unsigned char *image, __float128 real_min,
     image[pixel_index + 2] = b;
   }
 }
-__float128 ParseFloat128(const char *s) { return strtof128(s, NULL); }
+__float128 parseFloat128(const char *s) { return strtof128(s, NULL); }
 
-extern "C" {
-
-void ComputeMandelbrot128(unsigned char *image, int img_w, int img_h,
-                          const char *real_center, const char *imag_center,
-                          const char *real_width, const char *imag_height,
+void computeMandelbrot128(unsigned char *image, int img_w, int img_h,
+                          __float128 real_center, __float128 imag_center,
+                          __float128 real_width, __float128 imag_height,
                           int channels) {
 
-  __float128 rc = ParseFloat128(real_center);
-  __float128 ic = ParseFloat128(imag_center);
-  __float128 rw = ParseFloat128(real_width);
-  __float128 ih = ParseFloat128(imag_height);
+  __float128 real_max = real_center + real_width / 2.0;
+  __float128 real_min = real_center - real_width / 2.0;
+  __float128 imag_max = imag_center + imag_height / 2.0;
+  __float128 imag_min = imag_center - imag_height / 2.0;
 
-  __float128 real_max = rc + rw / 2.0q;
-  __float128 real_min = rc - rw / 2.0q;
-  __float128 imag_max = ic + ih / 2.0q;
-  __float128 imag_min = ic - ih / 2.0q;
-
-  printf("%f + %fi, W: %f H: %f\n", (double)rc, (double)ic, (double)rw,
-         (double)ih);
+  // printf("%f + %fi, W: %f H: %f\n", (double)real_center, (double)imag_center,
+  //        (double)real_width, (double)imag_height);
 
   __float128 real_scale = (real_max - real_min) / img_w;
   __float128 imag_scale = (imag_max - imag_min) / img_h;
@@ -116,5 +110,27 @@ void ComputeMandelbrot128(unsigned char *image, int img_w, int img_h,
   cudaDeviceSynchronize();
   cudaMemcpy(image, dev_image, bytes, cudaMemcpyDeviceToHost);
   cudaFree(dev_image);
+}
+
+extern "C" {
+void ComputeMandelbrot128Double(unsigned char *image, int img_w, int img_h,
+                                double real_center, double imag_center,
+                                double real_width, double imag_height,
+                                int channels) {
+  computeMandelbrot128(
+      image, img_w, img_h, static_cast<__float128>(real_center),
+      static_cast<__float128>(imag_center), static_cast<__float128>(real_width),
+      static_cast<__float128>(imag_height), channels);
+}
+
+void ComputeMandelbrot128String(unsigned char *image, int img_w, int img_h,
+                                const char *real_center,
+                                const char *imag_center, const char *real_width,
+                                const char *imag_height, int channels
+
+) {
+  computeMandelbrot128(image, img_w, img_h, parseFloat128(real_center),
+                       parseFloat128(imag_center), parseFloat128(real_width),
+                       parseFloat128(imag_height), channels);
 }
 }
