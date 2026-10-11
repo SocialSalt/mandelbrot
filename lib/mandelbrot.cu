@@ -1,61 +1,21 @@
+#include "include/color.cuh"
+#include "include/complex.cuh"
 #include "include/mandelbrot.h"
-#include <cmath>
-#include <math.h>
 #include <stdlib.h>
 
-#define MAX_ITER 500
-#define MAX_ITERF 500.0f
 #define NUM_THREADS 32 * 32
 #define NUM_BLOCKS (int)ceil(((long double)IMG_W * IMG_H) / NUM_THREADS)
 
-typedef struct complexNumber {
-  double real;
-  double imag;
-} C;
-
-__device__ double modulus(C *c) {
-  return sqrtf((c->real * c->real) + (c->imag * c->imag));
-}
-
-__device__ double modsq(C *c) {
-  return (c->real * c->real) + (c->imag * c->imag);
-}
-
-__device__ void add(C *z, C *cnst, C *res) {
-  res->real = z->real + cnst->real;
-  res->imag = z->imag + cnst->imag;
-}
-
-__device__ void mult(C *x, C *y, C *res) {
-  res->real = (x->real * y->real) - (x->imag * y->imag);
-  res->imag = (x->real * y->imag) + (x->imag * y->real);
-}
-
-__device__ int mandelbrot(C *c) {
-  C z = {0.0, 0.0};
+__device__ int mandelbrot(C *z, C *c) {
   C zsq;
   for (int i = 0; i < MAX_ITER; i++) {
-    if (modulus(&z) > 2) {
+    if (modulus(z) > 2) {
       return i;
     }
-    mult(&z, &z, &zsq);
-    add(&zsq, c, &z);
+    mult(z, z, &zsq);
+    add(&zsq, c, z);
   }
   return MAX_ITER;
-}
-
-__device__ void getColor(int itrs, unsigned char *r, unsigned char *g,
-                         unsigned char *b) {
-
-  if (itrs == MAX_ITER) {
-    *r = 0;
-    *g = 0;
-    *b = 0;
-  } else {
-    *r = (unsigned char)(itrs * (200.0f / MAX_ITERF));
-    *g = (unsigned char)(itrs * (190.0f / MAX_ITERF));
-    *b = (unsigned char)(itrs * (235.0f / MAX_ITERF));
-  }
 }
 
 __global__ void parallelMandelbrot(unsigned char *image, double real_min,
@@ -68,11 +28,12 @@ __global__ void parallelMandelbrot(unsigned char *image, double real_min,
     double real = real_min + ((double)x * real_scale);
     double imag = imag_min + ((double)y * imag_scale);
     C c = {real, imag};
+    C z = {0.0, 0.0};
 
-    int iters = mandelbrot(&c);
+    int iters = mandelbrot(&z, &c);
 
     unsigned char r, g, b;
-    getColor(iters, &r, &g, &b);
+    getColor(iters, modulus(&z), 2.0, &r, &g, &b);
 
     int pixel_index = (x + (y * img_w)) * channels;
     image[pixel_index + 0] = r;

@@ -6,7 +6,21 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/ttf"
 )
+
+func CreateFont(renderer *sdl.Renderer) (*ttf.Font, error) {
+	if err := ttf.Init(); err != nil {
+		return nil, errors.Wrap(err, "failed to init ttf")
+	}
+	font, err := ttf.OpenFont("/usr/share/fonts/truetype/ubuntu/UbuntuMono-R.ttf", 64)
+	if err != nil {
+		return nil, err
+	}
+
+	return font, nil
+
+}
 
 func CreateSDL(width int, height int) (*sdl.Window, *sdl.Renderer, *sdl.Texture, error) {
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
@@ -45,10 +59,11 @@ func CreateSDL(width int, height int) (*sdl.Window, *sdl.Renderer, *sdl.Texture,
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to create texture")
 	}
+
 	return window, renderer, texture, nil
 }
 
-func UpdateDisplay(buffer []byte, renderer *sdl.Renderer, texture *sdl.Texture, width int, height int, pitch int) error {
+func UpdateDisplay(buffer []byte, renderer *sdl.Renderer, texture *sdl.Texture, textTexture *sdl.Texture, b *Button, m *Minimap, width int, height int, pitch int) error {
 	rect := sdl.Rect{
 		X: 0,
 		Y: 0,
@@ -66,6 +81,12 @@ func UpdateDisplay(buffer []byte, renderer *sdl.Renderer, texture *sdl.Texture, 
 
 	if err := renderer.Copy(texture, nil, nil); err != nil {
 		return errors.Wrap(err, "failed to copy the renderer")
+	}
+	if err := b.Render(renderer, textTexture); err != nil {
+		return errors.Wrap(err, "failed to render button")
+	}
+	if err := m.Render(renderer); err != nil {
+		return errors.Wrap(err, "failed to render minimap")
 	}
 	renderer.Present()
 	return nil

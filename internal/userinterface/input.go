@@ -54,8 +54,14 @@ func ComputeDrag(start Location, end Location, width int32, height int32, bounds
 
 }
 
-func PollInput(state *State) bool {
+func PollInput(state *State, b *Button, m *Minimap) bool {
 	event := sdl.PollEvent()
+	if b.HandleEvent(event) {
+		return true
+	}
+	if m.HandleEvent(event) {
+		return true
+	}
 	switch t := event.(type) {
 	case *sdl.QuitEvent:
 		return false
@@ -97,7 +103,6 @@ func PollInput(state *State) bool {
 		// state.MouseState.Scroll += t.PreciseY
 		// fmt.Printf("PreciseY: %v\n", t.PreciseY)
 		// fmt.Printf("Scroll: %v\n", state.MouseState.Scroll)
-
 	}
 	return true
 }
