@@ -33,7 +33,7 @@ __global__ void parallelMandelbrot(unsigned char *image, double real_min,
     int iters = mandelbrot(&z, &c);
 
     unsigned char r, g, b;
-    getColor(iters, modulus(&z), 2.0, &r, &g, &b);
+    getColor(iters, modulus(&z), &r, &g, &b);
 
     int pixel_index = (x + (y * img_w)) * channels;
     image[pixel_index + 0] = r;

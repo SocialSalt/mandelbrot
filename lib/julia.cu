@@ -9,7 +9,7 @@
 __device__ int julia(C *z, C *c) {
   C zsq;
   for (int i = 0; i < MAX_ITER; i++) {
-    if (modulus(z) > 2) {
+    if (modulus(z) > RADIUS) {
       return i;
     }
     mult(z, z, &zsq);
@@ -33,7 +33,7 @@ __global__ void parallelJulia(unsigned char *image, double real_min,
     int iters = julia(&z, &c);
 
     unsigned char r, g, b;
-    getColor(iters, modulus(&z), 2.0, &r, &g, &b);
+    getColor(iters, modulus(&z), &r, &g, &b);
 
     int pixel_index = (x + (y * img_w)) * channels;
     image[pixel_index + 0] = r;
